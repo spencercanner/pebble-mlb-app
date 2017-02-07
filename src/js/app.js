@@ -13,14 +13,11 @@ var gameInfo = [];
 var lastTimecode=0;
 var oldLastTimecode=0;
 var items = [];
-var inMenu = 0;
-var interval;
+var inMenu = 1;
 
-
-inMenu = 1;
 menu.show();
 getData(buildGamesList);
-interval = setInterval(function () {
+var interval = setInterval(function () {
 	getData(buildGamesList);
 }, 30000);
 
@@ -115,6 +112,11 @@ function buildGamesList(data){
 			pbp = [];
 			pbp.push(temppbp);
 		}
+		if (!Array.isArray(games)){
+			var tempGames = games;
+			games = [];
+			games.push(tempGames);
+		}
 		for (var i = 0; i < pbp.length; i++){
 			item = pbp[i];
 			title = item.away_name_abbrev + " " + item.runs_away +  ", " + item.home_name_abbrev + " " + item.runs_home;
@@ -183,38 +185,45 @@ function buildGamesList(data){
 					if (runners.split(" ").length == 3)
 						runners = runners.replace("Runners", "Runner");
 				}
-				gameInfo[item.id].push({title: title + "\n" + top + inning + ", " + outs + ", " + runners, content: item.text, timecode: item.timecode, menutitle: title, menusubtitle: "In Progress"});
+				gameInfo[item.id].push({title: title + "\n" + top + inning + ", " + outs + ", " + runners, 
+																content: item.text, timecode: item.timecode, menutitle: title, menusubtitle: "In Progress"});
 			}
 			else if (gameInfo.indexOf(item.id) != -1 && lastTimecode === 0 && item.id == gameOfInterest){
 				lastTimecode = item.timecode.split("_")[1];
 			}
 		}
 		
-		if (gameOfInterest !== "" && gameInfo.indexOf(gameOfInterest) == -1 && gameDetails.body() !== "" && gameDetails.title() !== "" && lastTimecode > 0){
+		if (gameOfInterest !== "" && gameInfo.indexOf(gameOfInterest) == -1 && gameDetails.body() !== "" && 
+				gameDetails.title() !== "" && lastTimecode > 0){
 			gameInfo.push(gameOfInterest);
 			gameInfo[gameOfInterest] = [];
 			var splitTitle = gameDetails.title().split(" ");
 			var createdTitle = splitTitle[0] + " " + splitTitle[1] + " " + splitTitle[2] + " " + splitTitle[3];
-			gameInfo[gameOfInterest].push({title: gameDetails.title(), content: gameDetails.body(), timecode: lastTimecode, menutitle: createdTitle, menusubtitle: "In Progress"});
+			gameInfo[gameOfInterest].push({title: gameDetails.title(), content: gameDetails.body(), 
+																		 timecode: "000_" + lastTimecode, menutitle: createdTitle, menusubtitle: "In Progress"});
 		}
 		for (i = 0; i < games.length; i++){
 			item = games[i].alert;
 			if (Array.isArray(item))
 				item = item[0];
 			if ((gameInfo.indexOf(games[i].game_id) == -1)|| 
-							(gameInfo.indexOf(games[i].game_id) != -1 && (item.timecode.split("_")[1] >= gameInfo[games[i].game_id][0].timecode.split("_")[1] ||
+							(gameInfo.indexOf(games[i].game_id) != -1 && 
+							 (item.timecode.split("_")[1] >= gameInfo[games[i].game_id][0].timecode.split("_")[1] ||
 						item.timecode.split("_")[1] == oldLastTimecode) && 
-						 (item.category == "end_of_half_inning"|| item.category == "game_over" || item.category == "final" || item.category == "delayed"))){
+						 (item.category == "end_of_half_inning"|| item.category == "game_over" || item.category == "final" || 
+							item.category == "delayed")) || (item.category == "game_over" || item.category == "final")){
 				var subtitle;
 				if (item.category == "pregame"){
 					title = item.brief_text.substring(19, 30).trim();						
 					title = title[title.length - 1] == "a" ? title.substring(0, title.length-2) : title;
+					title = title[title.length - 1] == "t" ? title.substring(0, title.length-3) : title;
 					title = title.replace(" at ", ", ");
 					subtitle = "Warmup";
 				}
 				else if (item.category == "warmup"){
 					title = item.brief_text.substring(19, 30).trim();
 					title = title[title.length - 1] == "a" ? title.substring(0, title.length-2) : title;
+					title = title[title.length - 1] == "t" ? title.substring(0, title.length-3) : title;
 					title = title.replace(" at ", ", ");
 					subtitle = "Warmup";
 				}
@@ -244,11 +253,13 @@ function buildGamesList(data){
 					title = item.brief_text.split(" - ")[1];
 					subtitle = "In Progress";
 				}
-				if(title.indexOf(",") > -1 && item.brief_text.substring(3,6).replace(":", "") != title.split(", ")[1].split(" ")[0]){
+				if(title.indexOf(",") > -1 && 
+					 item.brief_text.substring(3,6).replace(":", "") != title.split(", ")[1].split(" ")[0]){
 					var titleTeams = title.split(", ");
 					var firstTeam = titleTeams[0];
 					var secondTeam = titleTeams[1];
-					title = secondTeam.split(" ")[0] + " " + secondTeam.split(" ")[1] + ", " + firstTeam.split(" ")[0] + " " + firstTeam.split(" ")[1];
+					title = secondTeam.split(" ")[0] + " " + secondTeam.split(" ")[1] + ", " + 
+						firstTeam.split(" ")[0] + " " + firstTeam.split(" ")[1];
 				}
 				if (gameInfo.indexOf(games[i].game_id) == -1){
 					gameInfo.push(games[i].game_id);
@@ -262,7 +273,8 @@ function buildGamesList(data){
 					}
 				}
 				gameInfo[games[i].game_id] = [];
-				gameInfo[games[i].game_id].push({title: title, content: item.text, timecode: item.timecode, menutitle: title, menusubtitle: subtitle});
+				gameInfo[games[i].game_id].push({title: title, content: item.text, timecode: item.timecode, 
+																				 menutitle: title, menusubtitle: subtitle});
 			}
 		}
 		items.sort(function(a, b) {
@@ -280,7 +292,10 @@ function buildGamesList(data){
 	}
 	else if(inMenu == 2) {
 		if (gameInfo.indexOf(gameOfInterest) != -1){
-			if((gameDetails.title() != gameInfo[gameOfInterest][0].title || gameDetails.body() != gameInfo[gameOfInterest][0].content) && ((gameInfo[gameOfInterest][0].timecode.split("_")[1] > lastTimecode) || gameInfo[gameOfInterest][0].timecode.split("_")[1] == oldLastTimecode)){
+			if((gameDetails.title() != gameInfo[gameOfInterest][0].title || 
+					gameDetails.body() != gameInfo[gameOfInterest][0].content) && 
+				 ((gameInfo[gameOfInterest][0].timecode.split("_")[1] > lastTimecode) || 
+					gameInfo[gameOfInterest][0].timecode.split("_")[1] == oldLastTimecode)){
 				if (gameDetails.title() !== "" && gameDetails.body() !== ""){
 						Vibe.vibrate('short');
 						Light.trigger();
