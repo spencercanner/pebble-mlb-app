@@ -119,8 +119,8 @@ function buildGamesList(data){
     }
     for (var i = 0; i < pbp.length; i++){
       item = pbp[i];
-      title = item.away_name_abbrev + " " + item.runs_away +  ", " + item.home_name_abbrev + " " + item.runs_home;
       if (gameInfo.indexOf(item.id) == -1 && (item.timecode.split("_")[1] > lastTimecode || item.text == gameDetails.body())){
+        title = item.away_name_abbrev + " " + item.runs_away +  ", " + item.home_name_abbrev + " " + item.runs_home;
         gameInfo.push(item.id);
         gameInfo[item.id] = [];
         items.push({title: title, subtitle: "In Progress"});
